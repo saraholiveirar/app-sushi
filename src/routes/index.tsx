@@ -1,14 +1,16 @@
 // qual rota mostrar para o usuário
 
-import React from "react";
+import React, { useContext} from "react";
 
 import { View, ActivityIndicator } from "react-native";
 
 import AppRoutes from "./app.routes";
 import AuthRoutes from "./auth.routes";
 
+import { AuthContext } from "../contexts/AuthContext";
+
 function Routes(){
-    const isAuthenticated = false; //saber se o usuário está logado ou não
+    const { isAuthenticated } = useContext(AuthContext); //saber se o usuário está logado ou não
     const loading = false; //para saber se está carregando
 
     //ActivityIndicator é o spinner que roda quando fizer o login

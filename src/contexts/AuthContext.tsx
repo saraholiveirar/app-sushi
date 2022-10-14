@@ -1,4 +1,6 @@
-import React, {useState, createContext, ReactNode} from 'react';
+import React, {useState, createContext, ReactNode, useEffect} from 'react';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { api } from '../services/api'
 
@@ -6,8 +8,11 @@ import { api } from '../services/api'
 
 type AuthContextData = {
     user: userProps;
-    isAutheticated: boolean;
+    isAuthenticated: boolean;
     signIn: (credentials: SignInProps) => Promise<void>;
+    loadingAuth: boolean;
+    loading: boolean;
+    signOut: () => Promise<void>;
 }
 
 type userProps = {
@@ -37,25 +42,92 @@ export function AuthProvider({children}: AuthProviderProps){
     })
     
     const [loadingAuth, setLoadingAuth] = useState(false);
-    
-    const isAutheticated = !!user.name;
+    const [loading, setLoading] = useState(true);
 
+    const isAuthenticated = !!user.name;
+
+    useEffect( ( ) => {
+
+        async function getUser(){
+            //Pegar dados do User
+            const userInfo = await AsyncStorage.getItem('@appsushi')
+            let hasUser: userProps = JSON.parse(userInfo || '{}' )
+
+
+            //Verificar se recebemos as informações
+            if(Object.keys(hasUser).length > 0){
+                api.defaults.headers.common['Authorization'] = `Bearer ${hasUser.token}`
+
+                setUser({
+                    id: hasUser.id,
+                    name: hasUser.name,
+                    email: hasUser.email,
+                    token: hasUser.token
+                })
+            }
+            setLoading(false);
+        }
+
+    })
 
 
     async function signIn({ email, password}: SignInProps){
         setLoadingAuth(true);
 
         try{
-            
+            const response = await api.post('/session', {
+                email,
+                password
+            })
+
+            const { id, name, token } = response.data;
+
+            const data = {
+                ...response.data
+            };
+
+            await AsyncStorage.setItem('@appsushi', JSON.stringify(data))
+
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+            setUser({
+                id,
+                name,
+                email,
+                token,
+            })
+
+            setLoadingAuth(false);
+
+
         }catch(err){
             console.log('erro ao acessar', err)
             setLoadingAuth(false);
         }
     }
         
-    
+    async function signOut(){
+        await AsyncStorage.clear()
+        .then( () => {
+            setUser({
+                id: '',
+                name: '',
+                email: '',
+                token: ''
+            })
+        })
+    }
+
+
     return(
-        <AuthContext.Provider value={{ user, isAutheticated, signIn}}>
+        <AuthContext.Provider value={{ 
+            user, 
+            isAuthenticated, 
+            signIn, 
+            loading, 
+            loadingAuth, 
+            signOut}}>
+                
             {children}
         </AuthContext.Provider>
     )

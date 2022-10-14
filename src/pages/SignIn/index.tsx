@@ -29,7 +29,7 @@ export default function SignIn(){
             return;
         }
 
-        await signIn({ email, password})
+        await signIn({ email, password })
     }
 
     return(
@@ -38,6 +38,7 @@ export default function SignIn(){
                 style={styles.logo}
                 source={image1}
                 />
+
             <View style={styles.inputContainer}>
                 <TextInput
                     placeholder="Digite seu e-mail"
